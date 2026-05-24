@@ -2,8 +2,6 @@ name: Integracion Continua Python
 
 on:
   push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
