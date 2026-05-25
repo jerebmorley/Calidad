@@ -27,12 +27,17 @@ jobs:
       - name: Ejecutar pruebas automatizadas
         run: pytest
 
+      - name: Desplegar en Render
+        if: success() && github.ref_name == 'main'
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+
       - name: Notificar exito en Slack
         if: success()
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{
-            "text": "Integración Continua exitosa\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: success"
+            "text": "Integración Continua exitosa\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: success\nDeploy: ejecutado solo si la rama es main"
           }' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -41,6 +46,6 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{
-            "text": "Integración Continua fallida\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: failure\nRevisar logs en GitHub Actions."
+            "text": "Integración Continua fallida\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: failure\nDeploy: no ejecutado\nRevisar logs en GitHub Actions."
           }' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
