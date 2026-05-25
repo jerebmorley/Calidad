@@ -26,3 +26,21 @@ jobs:
 
       - name: Ejecutar pruebas automatizadas
         run: pytest
+
+      - name: Notificar exito en Slack
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{
+            "text": "Integración Continua exitosa\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: success"
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notificar falla en Slack
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{
+            "text": "Integración Continua fallida\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: failure\nRevisar logs en GitHub Actions."
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
