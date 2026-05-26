@@ -4,6 +4,14 @@ from calculadora import sumar, restar, multiplicar, dividir
 app = Flask(__name__)
 
 
+@app.route("/health")
+def health():
+    return jsonify({
+        "status": "ok",
+        "service": "calculadora-ci"
+    }), 200
+
+
 @app.route("/")
 def inicio():
     return jsonify({
@@ -12,7 +20,8 @@ def inicio():
             "sumar": "/sumar?a=2&b=3",
             "restar": "/restar?a=10&b=4",
             "multiplicar": "/multiplicar?a=3&b=5",
-            "dividir": "/dividir?a=10&b=2"
+            "dividir": "/dividir?a=10&b=2",
+            "health": "/health"
         }
     })
 
