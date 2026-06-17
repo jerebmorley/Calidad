@@ -26,20 +26,35 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Ejecutar pruebas automatizadas
-        run: pytest
+      - name: Ejecutar inspeccion estatica con Ruff
+        run: ruff check .
+
+      - name: Ejecutar pruebas automatizadas con cobertura
+        run: pytest --cov=calculadora --cov=app --cov-report=term-missing
 
       - name: Desplegar en Render
         if: success() && github.ref_name == 'main'
         run: |
           curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
 
+      - name: Esperar disponibilidad del despliegue
+        if: success() && github.ref_name == 'main'
+        run: |
+          echo "Esperando a que Render finalice el despliegue..."
+          sleep 60
+
+      - name: Ejecutar smoke test post-deploy
+        if: success() && github.ref_name == 'main'
+        run: |
+          echo "Verificando que la aplicacion desplegada responda correctamente..."
+          curl --fail --retry 10 --retry-delay 10 --retry-all-errors https://calidad-kbnd.onrender.com/health
+
       - name: Notificar exito en Slack
         if: success()
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{
-            "text": "Integración Continua exitosa\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: success\nDeploy: ejecutado solo si la rama es main"
+            "text": "Integración Continua exitosa\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: success\nInspección estática: OK\nPruebas con cobertura: OK\nDeploy: ejecutado solo si la rama es main\nSmoke test: ejecutado solo si hubo deploy en main"
           }' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -48,6 +63,6 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{
-            "text": "Integración Continua fallida\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: failure\nDeploy: no ejecutado\nRevisar logs en GitHub Actions."
+            "text": "Integración Continua fallida\nRepositorio: ${{ github.repository }}\nRama: ${{ github.ref_name }}\nCommit: ${{ github.event.head_commit.message }}\nAutor: ${{ github.actor }}\nEstado: failure\nDeploy: no ejecutado o no validado\nRevisar logs en GitHub Actions."
           }' \
           ${{ secrets.SLACK_WEBHOOK_URL }}
