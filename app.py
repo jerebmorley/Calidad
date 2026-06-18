@@ -1,8 +1,15 @@
+#import numpy
 from flask import Flask, request, jsonify
 from calculadora import sumar, restar, multiplicar, dividir
 
 app = Flask(__name__)
 
+'''
+@app.route("/demo-ruff")
+def demo_ruff():
+    resultado_temporal = "variable local no utilizada"
+    return jsonify({"mensaje": resultado_temporal})
+'''
 
 @app.route("/health")
 def health():
